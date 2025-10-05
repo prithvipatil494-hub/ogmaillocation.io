@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Location Finder - Email</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    
+    body {
+      font-family: 'Segoe UI', Arial, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 20px;
+    }
+    
+    .container {
+      max-width: 800px;
+      margin: 50px auto;
+      background: white;
+      padding: 40px;
+      border-radius: 15px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+    }
+    
+    h1 { color: #333; margin-bottom: 10px; text-align: center; }
+    .subtitle { text-align: center; color: #666; margin-bottom: 30px; }
+    
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px 40px;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      display: block;
+      margin: 10px auto;
+      transition: transform 0.2s;
+    }
+    
+    button:hover:not(:disabled) {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    }
+    
+    button:disabled { opacity: 0.6; cursor: not-allowed; }
+    
+    .email-btn { background: linear-gradient(135deg, #2196F3 0%, #1976D2 100%); }
+    .copy-btn-main { background: linear-gradient(135deg, #4CAF50 0%, #45a049 100%); }
+    
+    .result { margin-top: 30px; display: none; }
+    .loading { text-align: center; color: #667eea; margin-top: 20px; display: none; }
+    
+    .info-grid { display: grid; grid-template-columns: 1fr; gap: 15px; margin-bottom: 20px; }
+    .info-box {
+      background: #f7f9fc;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid #667eea;
+    }
+    
+    .label {
+      font-size: 12px;
+      color: #667eea;
+      font-weight: 600;
+      margin-bottom: 5px;
+      text-transform: uppercase;
+    }
+    
+    .value { font-size: 16px; color: #333; word-break: break-all; }
+    
+    .success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 15px;
+      border-left: 4px solid #4caf50;
+      font-size: 14px;
+    }
+    
+    .error {
+      background: #fee;
+      color: #c33;
+      padding: 15px;
+      border-radius: 8px;
+      margin-top: 20px;
+      border-left: 4px solid #f5576c;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: wrap;
+      margin-top: 20px;
+    }
+    
+    .action-buttons button { margin: 0; }
+    
+    #map {
+      width: 100%;
+      height: 350px;
+      margin-top: 20px;
+      border-radius: 10px;
+      border: 1px solid #ddd;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Location Finder</h1>
+    <p class="subtitle">Send your location via email or copy to clipboard</p>
+    
+    <button id="mainBtn" onclick="getLocation()">Get My Location</button>
+    
+    <div class="loading" id="loading">Getting your location...</div>
+    <div class="result" id="result"></div>
+  </div>
+
+  <script>
+    let currentPosition = null;
+
+    function showSuccessMessage(message) {
+      const successDiv = document.createElement('div');
+      successDiv.className = 'success';
+      successDiv.textContent = message;
+      document.querySelector('.container').appendChild(successDiv);
+      setTimeout(() => successDiv.remove(), 4000);
+    }
+
+    function showErrorMessage(message) {
+      const errorDiv = document.createElement('div');
+      errorDiv.className = 'error';
+      errorDiv.textContent = message;
+      document.querySelector('.container').appendChild(errorDiv);
+      setTimeout(() => errorDiv.remove(), 5000);
+    }
+
+    function sendViaEmail() {
+      if (!currentPosition) {
+        showErrorMessage('Please get your location first!');
+        return;
+      }
+
+      const lat = currentPosition.coords.latitude.toFixed(6);
+      const lng = currentPosition.coords.longitude.toFixed(6);
+      const accuracy = currentPosition.coords.accuracy.toFixed(2);
+      const timestamp = new Date().toLocaleString();
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+      const subject = 'My Current Location';
+      const body = `My Location Details:%0D%0A%0D%0A` +
+                  `Latitude: ${lat}%0D%0A` +
+                  `Longitude: ${lng}%0D%0A` +
+                  `Accuracy: ${accuracy} meters%0D%0A` +
+                  `Time: ${timestamp}%0D%0A%0D%0A` +
+                  `View on Google Maps:%0D%0A${mapsUrl}`;
+
+      window.location.href = `mailto:?subject=${subject}&body=${body}`;
+    }
+
+    function copyAllDetails() {
+      if (!currentPosition) {
+        showErrorMessage('Please get your location first!');
+        return;
+      }
+
+      const lat = currentPosition.coords.latitude.toFixed(6);
+      const lng = currentPosition.coords.longitude.toFixed(6);
+      const accuracy = currentPosition.coords.accuracy.toFixed(2);
+      const timestamp = new Date().toLocaleString();
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+      const text = `My Location\n\n` +
+                  `Latitude: ${lat}\n` +
+                  `Longitude: ${lng}\n` +
+                  `Accuracy: ${accuracy} meters\n` +
+                  `Time: ${timestamp}\n\n` +
+                  `Google Maps: ${mapsUrl}`;
+
+      navigator.clipboard.writeText(text).then(() => {
+        showSuccessMessage('Location details copied! You can paste this anywhere.');
+      }).catch(() => {
+        showErrorMessage('Failed to copy. Please copy manually.');
+      });
+    }
+
+    function shareViaWhatsApp() {
+      if (!currentPosition) {
+        showErrorMessage('Please get your location first!');
+        return;
+      }
+
+      const lat = currentPosition.coords.latitude.toFixed(6);
+      const lng = currentPosition.coords.longitude.toFixed(6);
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+
+      const text = `My Location:\n${lat}, ${lng}\n\nView on map: ${mapsUrl}`;
+      const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(text)}`;
+      
+      window.open(whatsappUrl, '_blank');
+    }
+
+    function getLocation() {
+      const loading = document.getElementById('loading');
+      const result = document.getElementById('result');
+      const mainBtn = document.getElementById('mainBtn');
+      
+      if (!navigator.geolocation) {
+        showErrorMessage('Geolocation is not supported by your browser.');
+        return;
+      }
+
+      mainBtn.disabled = true;
+      loading.style.display = 'block';
+      result.style.display = 'none';
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          currentPosition = position;
+          showPosition(position);
+          mainBtn.disabled = false;
+          loading.style.display = 'none';
+        },
+        (error) => {
+          showError(error);
+          mainBtn.disabled = false;
+          loading.style.display = 'none';
+        },
+        { enableHighAccuracy: true, timeout: 30000, maximumAge: 0 }
+      );
+    }
+
+    function showPosition(position) {
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+
+      const lat = position.coords.latitude.toFixed(6);
+      const lng = position.coords.longitude.toFixed(6);
+      const accuracy = position.coords.accuracy.toFixed(2);
+      
+      let html = '<div class="info-grid">';
+      html += `
+        <div class="info-box">
+          <div class="label">Latitude</div>
+          <div class="value">${lat}</div>
+        </div>
+        <div class="info-box">
+          <div class="label">Longitude</div>
+          <div class="value">${lng}</div>
+        </div>
+        <div class="info-box">
+          <div class="label">Accuracy</div>
+          <div class="value">${accuracy} meters</div>
+        </div>
+      `;
+      
+      if (position.coords.altitude) {
+        html += `
+          <div class="info-box">
+            <div class="label">Altitude</div>
+            <div class="value">${position.coords.altitude.toFixed(2)} meters</div>
+          </div>
+        `;
+      }
+      
+      html += '</div>';
+      
+      html += `
+        <div class="action-buttons">
+          <button class="email-btn" onclick="sendViaEmail()">Send via Email</button>
+          <button class="copy-btn-main" onclick="copyAllDetails()">Copy All Details</button>
+          <button style="background: linear-gradient(135deg, #25D366 0%, #128C7E 100%);" onclick="shareViaWhatsApp()">Share on WhatsApp</button>
+        </div>
+      `;
+      
+      const mapsUrl = `https://www.google.com/maps?q=${lat},${lng}`;
+      html += `<iframe id="map" src="https://www.openstreetmap.org/export/embed.html?bbox=${parseFloat(lng)-0.01},${parseFloat(lat)-0.01},${parseFloat(lng)+0.01},${parseFloat(lat)+0.01}&layer=mapnik&marker=${lat},${lng}"></iframe>`;
+      
+      result.innerHTML = html;
+    }
+
+    function showError(error) {
+      const result = document.getElementById('result');
+      result.style.display = 'block';
+      
+      let message = '';
+      switch(error.code) {
+        case error.PERMISSION_DENIED:
+          message = "Permission denied. Please allow location access.";
+          break;
+        case error.POSITION_UNAVAILABLE:
+          message = "Location information unavailable.";
+          break;
+        case error.TIMEOUT:
+          message = "Location request timed out.";
+          break;
+        default:
+          message = "An error occurred.";
+      }
+      
+      result.innerHTML = `<div class="error">${message}</div>`;
+    }
+  </script>
+</body>
+</html>
